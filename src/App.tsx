@@ -20,6 +20,10 @@ function App() {
   // --- POST SOCIAL ---
   const [postHeadline, setPostHeadline] = useState('Iniciamos el desarrollo de Codenity Stack')
   const [postBody, setPostBody] = useState('Una plataforma moderna para desarrolladores. Más información próximamente.')
+  // NUEVOS ESTADOS PARA LOS BOTONES
+  const [btnText1, setBtnText1] = useState('En Desarrollo')
+  const [btnText2, setBtnText2] = useState('Mantente Atento')
+  
   const anthropicBg = '#F3F1E8'
 
   useEffect(() => {
@@ -81,80 +85,167 @@ function App() {
       setColor('#000000');
       setTextColor('#000000');
   };
-
+// ...existing code...
   const toggleTransparent = () => {
       setTransparent(!transparent);
   };
+
+  // --- FUNCIÓN REUTILIZABLE PARA DIBUJAR EL ICONO ---
+  // Genera el SVG del icono con las máscaras y cortes exactos
+  const renderIconString = (uniqueId: string, inkColor: string) => {
+      return `
+      <defs>
+        <mask id="${uniqueId}-m2"><rect x="-1000" y="-1000" width="4000" height="4000" fill="white"/><path d="${p3}" stroke="black" stroke-width="${(4 * thickness) + gap}" stroke-linecap="round"/></mask>
+        <mask id="${uniqueId}-m3"><rect x="-1000" y="-1000" width="4000" height="4000" fill="white"/><path d="${p1}" stroke="black" stroke-width="${(6 * thickness) + gap}" stroke-linecap="round"/></mask>
+        <clipPath id="${uniqueId}-cp"><rect x="0" y="0" width="80" height="80" /></clipPath>
+      </defs>
+      <g clip-path="url(#${uniqueId}-cp)">
+        <path d="${p2}" stroke="${inkColor}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="0.6" mask="url(#${uniqueId}-m2)" />
+        <path d="${p3}" stroke="${inkColor}" stroke-width="${4 * thickness}" stroke-linecap="round" opacity="0.4" mask="url(#${uniqueId}-m3)" />
+        <path d="${p1}" stroke="${inkColor}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="1"/>
+      </g>`;
+  }
 
   // --- GENERADORES SVG ---
   const generateCurrentSvg = () => {
     return `
 <svg width="${size}" height="${(size * viewBoxH) / viewBoxW}" viewBox="0 0 ${viewBoxW} ${viewBoxH}" xmlns="http://www.w3.org/2000/svg" fill="none">
   <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&amp;display=swap'); text { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
-  <defs>
-    <mask id="logo-m2"><rect x="-1k" y="-1k" width="10k" height="10k" fill="white"/><path d="${p3}" stroke="black" stroke-width="${(4 * thickness) + gap}" stroke-linecap="round"/></mask>
-    <mask id="logo-m3"><rect x="-1k" y="-1k" width="10k" height="10k" fill="white"/><path d="${p1}" stroke="black" stroke-width="${(6 * thickness) + gap}" stroke-linecap="round"/></mask>
-    <clipPath id="logo-cp"><rect x="0" y="0" width="80" height="80" /></clipPath>
-  </defs>
   ${!transparent ? `<rect width="${viewBoxW}" height="${viewBoxH}" fill="${bgColor}" />` : ''}
-  <g transform="${iconTranslate}"><g clip-path="url(#logo-cp)">
-    <path d="${p2}" stroke="${color}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="0.6" mask="url(#logo-m2)" />
-    <path d="${p3}" stroke="${color}" stroke-width="${4 * thickness}" stroke-linecap="round" opacity="0.4" mask="url(#logo-m3)" />
-    <path d="${p1}" stroke="${color}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="1"/>
-  </g></g>
+  
+  <g transform="${iconTranslate}">
+      ${renderIconString('main', color)}
+  </g>
+
   ${showText ? `<text x="${textX}" y="${titleY}" fill="${textColor}" text-anchor="${textAnchor}" font-size="28" font-weight="700" alignment-baseline="middle">${title}</text><text x="${textX}" y="${subTitleY}" fill="${textColor}" text-anchor="${textAnchor}" font-size="14" font-weight="500" opacity="0.6" alignment-baseline="middle">${subtitle}</text>` : ''}
 </svg>`
   }
-// ...existing code...
   const generatePostSvg = () => {
-    const logoW = 72 + (showText ? textWidth : 0);
-    const logoScale = 1.8;
-    const logoRealW = logoW * logoScale;
-    const logoX = (1200 - logoRealW) / 2;
-    const brandColor = '#1A1A1A';
+    // --- CONFIGURACIÓN DE COLORES Y ESTILO ---
+    const bgCanvas = '#F3F1E8';     // Fondo estilo papel
+        const buttonColor = '#1A1A1A'; 
+
+    // Cambiamos el color secundario a un gris un poco más claro y neutro para la descripción
+    const colorSub = '#666666';     
     
-    // TRUCO VISUAL: Usamos stroke del color de fondo (#F3F1E8) para recortar sin mascaras complejas
-    const bg = anthropicBg; 
+    const accentLine = '#D08266';   // Terracota cálido
+
+    // --- DIMENSIONES Y LAYOUT (Compacto 800x800) ---
+    const postW = 740;
+    const postH = 740;
+
+    // --- CÁLCULOS DE POSICIÓN ---
+    const logoScale = 2.2; 
+    const contentWidth = 50 + (showText ? textWidth : 0);
+    const logoStartX = (postW - (contentWidth * logoScale)) / 2;
+
+    const baseTextX = 65;  
+    const baseTitleY = 49; 
+    const baseSubY = 70;   
+        const wrapText = (text: string, maxChars: number) => {
+        const words = text.split(' ');
+        let lines: string[] = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            if (currentLine.length + 1 + words[i].length <= maxChars) {
+                currentLine += ' ' + words[i];
+            } else {
+                lines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    };
+    const descriptionLines = wrapText(postBody, 70);
 
     return `
-<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" fill="none">
+<svg width="${postW}" height="${postH}" viewBox="0 0 ${postW} ${postH}" xmlns="http://www.w3.org/2000/svg" fill="none">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&amp;display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap');
     text { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .title { font-size: 50px; font-weight: 700; fill: #1A1A1A; }
-    .subtitle { font-size: 24px; font-weight: 500; fill: #4a4a4a; }
   </style>
-  <rect width="1200" height="630" fill="${anthropicBg}" />
-  <g transform="translate(${logoX}, 80) scale(${logoScale})">
-      <defs>
-        <clipPath id="post-cp"><rect x="0" y="0" width="80" height="80" /></clipPath>
-      </defs>
-      <g clip-path="url(#post-cp)">
-        <!-- Path 3 (Borrador para cortar a P2) -->
-        <path d="${p3}" stroke="${bg}" stroke-width="${(4 * thickness) + gap}" stroke-linecap="round"/>
-        <!-- Path 2 (Abajo) -->
-        <path d="${p2}" stroke="${brandColor}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="0.6" />
-        
-        <!-- Path 1 (Borrador para cortar a P3) -->
-        <path d="${p1}" stroke="${bg}" stroke-width="${(6 * thickness) + gap}" stroke-linecap="round"/>
-        <!-- Path 3 (Medio) -->
-        <path d="${p3}" stroke="${brandColor}" stroke-width="${4 * thickness}" stroke-linecap="round" opacity="0.4" />
-        
-        <!-- Path 1 (Arriba) -->
-        <path d="${p1}" stroke="${brandColor}" stroke-width="${6 * thickness}" stroke-linecap="round" opacity="1"/>
+
+  <!-- 1. FONDO -->
+  <rect width="${postW}" height="${postH}" fill="${bgCanvas}" />
+
+// ...existing code...
+  <!-- 2. LOGO (Parte Superior) -->
+  <!-- Movemos todo 40px hacia arriba (120 -> 80) -->
+  <g transform="translate(${logoStartX}, 65) scale(${logoScale})">
+      <g transform="translate(0, 5)">
+        <!-- AQUI: Usamos 'color' (estado del icono) -->
+        ${renderIconString('post', color)}
       </g>
-      <text x="72" y="42" fill="${brandColor}" font-size="28" font-weight="700" alignment-baseline="middle">${title}</text>
-      <text x="72" y="65" fill="${brandColor}" font-size="14" font-weight="500" opacity="0.6" alignment-baseline="middle">${subtitle}</text>
+      ${showText ? `
+      <!-- AQUI: Usamos 'textColor' (estado del texto) -->
+      <text x="${baseTextX}" y="${baseTitleY}" fill="${textColor}" font-size="28" font-weight="700" alignment-baseline="middle">${title}</text>
+      <!-- Subtítulo: Usamos textColor con opacidad o lo dejamos gris? Lo dejaré relativo al texto -->
+      <text x="${baseTextX}" y="${baseSubY}" fill="${textColor}" font-size="14" font-weight="600" opacity="0.6" alignment-baseline="middle">${subtitle}</text>
+      ` : ''}
   </g>
-  <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#688F83"/><stop offset="1" stop-color="#D5A686"/></linearGradient></defs>
-  <path d="M 150 200 L 1050 200" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" />
-  <text x="600" y="300" text-anchor="middle" class="title">${postHeadline}</text>
-  <text x="600" y="360" text-anchor="middle" class="subtitle" width="800">${postBody}</text>
-  <path d="M 150 420 L 1050 420" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" />
-  <text x="600" y="590" text-anchor="middle" font-size="14" fill="#888" opacity="0.7">Inspired by Anthropic Design Standards</text>
-  <path d="M 400 570 L 800 570" stroke="#000" stroke-width="1" opacity="0.1" />
+
+  <!-- 3. CONTENIDO CENTRAL -->
+  
+ <!-- Línea Divisoria Superior -->
+  <!-- Movemos todo 40px hacia arriba (320 -> 280) -->
+  <path d="M 60 280 L ${postW - 60} 280" stroke="${accentLine}" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Textos -->
+  <g transform="translate(${postW / 2}, 0)" text-anchor="middle">
+      
+      <!-- HEADLINE -->
+      <!-- Movemos todo 40px hacia arriba (390 -> 350) -->
+      <text y="350" font-size="32" font-weight="450" fill="#333333" letter-spacing="-0.5">
+          ${ // También envolvemos el título por si acaso
+             wrapText(postHeadline, 45).map((line, i) => 
+                `<tspan x="0" dy="${i === 0 ? 0 : '1.2em'}">${line}</tspan>`
+             ).join('') 
+           }
+      </text>
+      
+      <!-- DESCRIPTION (BODY) CON SALTO DE LÍNEA AUTOMÁTICO -->
+      <!-- 'dy' mueve cada línea hacia abajo relativo a la anterior -->
+      <!-- Movemos todo 40px hacia arriba (455 -> 415) -->
+      <text y="425" font-size="18" font-weight="380" fill="${colorSub}" letter-spacing="0">
+          ${descriptionLines.map((line, i) => 
+              `<tspan x="0" dy="${i === 0 ? 0 : '1.5em'}">${line}</tspan>`
+          ).join('')}
+      </text>
+      
+  </g>
+
+  <!-- Línea Divisoria Inferior -->
+  <!-- Movemos todo 40px hacia arriba (540 -> 500) -->
+  <path d="M 60 500 L ${postW - 60} 500" stroke="${accentLine}" stroke-width="6" stroke-linecap="round" />
+
+    <!-- 4. BOTONES / BADGES (Inferior) -->
+  <!-- Movemos todo 40px hacia arriba (580 -> 540) -->
+  <g transform="translate(0, 540)"> 
+      <!-- Botón Izquierdo -->
+      <g transform="translate(${postW / 2 - 150}, 0)">
+          <!-- Usamos buttonColor (negro fijo) o quieres que los botones también cambien? 
+               Por diseño, suelen verse mejor en negro, los dejo en buttonColor -->
+          <rect x="-130" y="0" width="260" height="64" rx="12" fill="${buttonColor}" />
+          <text x="0" y="40" fill="#FFFFFF" text-anchor="middle" font-size="18" font-weight="700">${btnText1}</text>
+      </g>
+
+      <!-- Botón Derecho -->
+      <g transform="translate(${postW / 2 + 150}, 0)">
+          <rect x="-130" y="0" width="260" height="64" rx="12" fill="none" stroke="${buttonColor}" stroke-width="2.5" />
+          <text x="0" y="40" fill="${buttonColor}" text-anchor="middle" font-size="18" font-weight="700">${btnText2}</text>
+      </g>
+  </g>
+
+  <!-- Footer Discreto -->
+// ...existing code...
+  <!-- Footer Discreto -->
+  <text x="${postW / 2}" y="${postH - 30}" text-anchor="middle" font-size="13" fill="#999" font-weight="500">Inspired by Anthropic Design Standards</text>
 </svg>`
   }
+
+// ...existing code...
 // ...existing code...
 
   // --- DESCARGAS ---
@@ -173,12 +264,13 @@ function App() {
   const downloadPostPng = () => {
     const svgString = generatePostSvg();
     const canvas = document.createElement('canvas');
-    canvas.width = 1200; canvas.height = 630;
+  canvas.width = 800; canvas.height = 800; // Cuadrado 1:1
     const ctx = canvas.getContext('2d');
+
     const img = new Image();
     img.onload = () => {
         if (!ctx) return;
-        ctx.fillStyle = anthropicBg; ctx.fillRect(0, 0, 1200, 630);
+        ctx.fillStyle = anthropicBg; ctx.fillRect(0, 0, 800, 800); // Actualizamos fill
         ctx.drawImage(img, 0, 0);
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
@@ -222,7 +314,6 @@ function App() {
          <div style={styles.workspace}>
              
              {/* PREVIEW */}
-             // ...existing code...
              <div style={styles.leftPanel}>
                 <div style={styles.logoPreview}>
                    <svg width="100%" height="100%" style={{ maxHeight: '300px', maxWidth: '100%' }} viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}>
@@ -316,9 +407,15 @@ function App() {
 
              <div style={styles.rightPanel}>
                  <label style={styles.label}>Contenido del Post</label>
-                 <textarea value={postHeadline} onChange={e => setPostHeadline(e.target.value)} style={{...styles.input, height: 80, resize:'vertical'}} />
-                 <textarea value={postBody} onChange={e => setPostBody(e.target.value)} style={{...styles.input, height: 60, resize:'vertical'}} />
+                 <textarea value={postHeadline} onChange={e => setPostHeadline(e.target.value)} style={{...styles.input, height: 80, resize:'vertical'}} placeholder="Título Principal" />
+                 <textarea value={postBody} onChange={e => setPostBody(e.target.value)} style={{...styles.input, height: 60, resize:'vertical'}} placeholder="Subtítulo o descripción" />
                  
+                 <label style={{...styles.label, marginTop: 15}}>Botones (Badges)</label>
+                 <div style={styles.row}>
+                    <input value={btnText1} onChange={e => setBtnText1(e.target.value)} style={styles.input} placeholder="Botón Izq (Negro)" />
+                    <input value={btnText2} onChange={e => setBtnText2(e.target.value)} style={styles.input} placeholder="Botón Der (Borde)" />
+                 </div>
+
                  <div style={{fontSize: 12, color: '#666', marginTop: 10, background: '#f0f0f0', padding: 10, borderRadius: 6}}>
                     💡 El generador social usa automáticamente tu logo configurado arriba (en negro) sobre el fondo "Beige Anthropic".
                  </div>
