@@ -1,4 +1,4 @@
-import { useState, useEffect, CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 
 function App() {
   // --- CONFIGURACIÓN DE MARCA ---
@@ -17,7 +17,7 @@ function App() {
   const [transparent, setTransparent] = useState(false)
 
   // --- CONFIGURACIÓN FIJA (Estándar) ---
-  const size = 256;
+  const size = 512;
   const thickness = 1; // Grosor fijo estándar
 
   // --- POST SOCIAL ---
@@ -111,7 +111,7 @@ function App() {
     uniqueId: string,
     inkColor: string
   ) => {
- 
+
     const isDark = inkColor === "#ffffff";
 
     // Ajuste de colores base según el modo
@@ -132,8 +132,7 @@ function App() {
     </linearGradient>
 
     <!-- B. FILTRO FROSTED -->
-    <filter id="${uniqueId}-frostFilter" x="-50%" y="-50%" width="200%" height="200%" filterUnits="userSpaceOnUse">
-        
+<filter id="${uniqueId}-frostFilter" x="-100%" y="-100%" width="300%" height="300%" filterUnits="objectBoundingBox">        
         <!-- 1. Sombra Suave (Drop Shadow) -->
         <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="shadowBlur"/>
         <feOffset in="shadowBlur" dx="0" dy="6" result="shadowOffset"/>
@@ -196,6 +195,18 @@ function App() {
 
   ${showText ? `<text x="${textX}" y="${titleY}" fill="${textColor}" text-anchor="${textAnchor}" font-size="${titleFontSize}" font-weight="700" alignment-baseline="middle">${title}</text>${showSubtitle ? `<text x="${textX}" y="${subTitleY}" fill="${textColor}" text-anchor="${textAnchor}" font-size="${subtitleFontSize}" font-weight="500" opacity="0.6" alignment-baseline="middle">${subtitle}</text>` : ''}` : ''}
 </svg>`
+  }
+
+
+  const generateLandingIconSvg = () => {
+    const icoViewBox = 80;
+    return `
+<svg width="2048" height="2048" viewBox="0 0 ${icoViewBox} ${icoViewBox}" xmlns="http://www.w3.org/2000/svg" fill="none">
+  ${!transparent ? `<rect width="${icoViewBox}" height="${icoViewBox}" rx="15" fill="${bgColor}" />` : ''}
+  <g>
+      ${renderIconString('landing-gen', color)}
+  </g>
+</svg>`;
   }
   const generatePostSvg = () => {
     // El fondo principal será negro/oscuro para contrastar, pero añadiremos las formas de color
@@ -403,6 +414,48 @@ function App() {
 </svg>`
   }
 
+  const generateOGSvg = () => {
+    const ogW = 1200;
+    const ogH = 630;
+    const bgCanvas = '#000000';
+    const titleColor = '#FFFFFF';
+
+    // Para el OG, ignoramos el layout vertical y forzamos un centrado elegante
+    const logoScale = 4.0;
+    const totalW = 80 + (showText ? textWidth : 0);
+    const scaledW = totalW * logoScale;
+    
+    // Centrado total
+    const startX = (ogW - scaledW) / 2;
+    const startY = (ogH - (80 * logoScale)) / 2;
+
+    const logoGroupTransform = `translate(${startX}, ${startY}) scale(${logoScale})`;
+
+    return `
+<svg width="${ogW}" height="${ogH}" viewBox="0 0 ${ogW} ${ogH}" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap');
+    text { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+
+  <rect width="${ogW}" height="${ogH}" fill="${bgCanvas}" />
+  
+  <g transform="${logoGroupTransform}">
+      <g>
+          ${renderIconString('og-clean', color)}
+      </g>
+      
+      ${showText ? `
+      <g transform="translate(85, 0)">
+        <text x="0" y="42" fill="${titleColor}" font-size="${titleFontSize}" font-weight="700" alignment-baseline="middle">${title}</text>
+        ${showSubtitle ? `<text x="0" y="65" fill="${titleColor}" font-size="${subtitleFontSize}" font-weight="500" opacity="0.6" alignment-baseline="middle">${subtitle}</text>` : ''}
+      </g>` : ''}
+  </g>
+
+  <text x="${ogW / 2}" y="${ogH - 40}" text-anchor="middle" font-size="14" fill="#444" font-weight="500" letter-spacing="1px">SOCIAL PREVIEW • 1200x630</text>
+</svg>`
+  }
+
   // ...existing code...
   // ...existing code...
 
@@ -417,8 +470,9 @@ function App() {
     link.click();
     document.body.removeChild(link);
   }
-  const downloadCurrent = () => download(generateCurrentSvg(), `logo-${showText ? 'completo' : 'icon'}.svg`);
 
+  const downloadCurrent = () => download(generateCurrentSvg(), `logo-${showText ? 'completo' : 'icon'}.svg`);
+  const downloadLandingIcon = () => download(generateLandingIconSvg(), 'codenity-stack-landing-2k.svg');
   const downloadPostPng = () => {
     const svgString = generatePostSvg();
     const canvas = document.createElement('canvas');
@@ -437,6 +491,28 @@ function App() {
       link.download = `social-post-${title}.png`;
       document.body.appendChild(link);
       link.click();
+    };
+    img.src = URL.createObjectURL(new Blob([svgString], { type: 'image/svg+xml' }));
+  };
+
+  const downloadOGPng = () => {
+    const svgString = generateOGSvg();
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200; canvas.height = 630;
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.onload = () => {
+      if (!ctx) return;
+      ctx.fillStyle = intellijBg; ctx.fillRect(0, 0, 1200, 630);
+      ctx.drawImage(img, 0, 0);
+
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `social-preview.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     };
     img.src = URL.createObjectURL(new Blob([svgString], { type: 'image/svg+xml' }));
   };
@@ -521,6 +597,46 @@ function App() {
     img.src = url;
   };
 
+  // --- NUEVAS FUNCIONES PARA PWA ---
+
+  const downloadPngIcon = (size: number, filename: string, includeBg: boolean = false) => {
+    const icoViewBox = 80;
+    const svgString = `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${icoViewBox} ${icoViewBox}" xmlns="http://www.w3.org/2000/svg" fill="none">
+        ${includeBg && !transparent ? `<rect width="${icoViewBox}" height="${icoViewBox}" fill="${bgColor}" />` : ''}
+        <g>
+            ${renderIconString(`pwa-${size}`, color)}
+        </g>
+      </svg>`;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      if (!ctx) return;
+      if (includeBg && !transparent) {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, size, size);
+      }
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+    img.src = url;
+  }
+
   // --- ESTILOS REACT ---
   const styles: { [key: string]: CSSProperties } = {
     container: { fontFamily: "'Plus Jakarta Sans', sans-serif", padding: '40px 20px', maxWidth: '1100px', margin: '0 auto', color: '#1A1A1A' },
@@ -562,8 +678,8 @@ function App() {
                 </g>
                 {showText && (
                   <>
-                    <text x={textX} y={titleY} fill={textColor} textAnchor={textAnchor} fontSize={titleFontSize} fontWeight="700" alignmentBaseline="middle">{title}</text>
-                    {showSubtitle && <text x={textX} y={subTitleY} fill={textColor} textAnchor={textAnchor} fontSize={subtitleFontSize} fontWeight="500" opacity="0.6" alignmentBaseline="middle">{subtitle}</text>}
+                    <text x={textX} y={titleY} fill={textColor} textAnchor={textAnchor as "start" | "middle" | "end" | "inherit"} fontSize={titleFontSize} fontWeight="700" alignmentBaseline="middle">{title}</text>
+                    {showSubtitle && <text x={textX} y={subTitleY} fill={textColor} textAnchor={textAnchor as "start" | "middle" | "end" | "inherit"} fontSize={subtitleFontSize} fontWeight="500" opacity="0.6" alignmentBaseline="middle">{subtitle}</text>}
                   </>
                 )}
               </svg>
@@ -631,6 +747,21 @@ function App() {
             <button style={styles.btn} onClick={downloadCurrent}>
               Descargar {showText ? 'Logo Completo' : 'Solo Icono'}
             </button>
+            <button
+              style={{
+                ...styles.btn,
+                marginTop: '10px',
+                background: '#1a1a1a',
+                border: '1px solid #333',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onClick={downloadLandingIcon}
+            >
+              <span>🚀</span> Descargar Icono 2K (Landing)
+            </button>
           </div>
         </div>
       </section>
@@ -660,7 +791,30 @@ function App() {
               💡 El generador social usa formas abstractas vibrantes (Azul, Rosa, Naranja) inspiradas en el logo de IntelliJ IDEA sobre fondo negro.
             </div>
 
-            <button style={{ ...styles.btn, marginTop: 20 }} onClick={downloadPostPng}>Descargar PNG</button>
+            <button style={{ ...styles.btn, marginTop: 20 }} onClick={downloadPostPng}>Descargar PNG (740x740)</button>
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN NUEVA: OPEN GRAPH IMAGE (1200x630) */}
+      <section style={styles.section}>
+        <div style={styles.heading}><span>🖼️</span> Social Preview (Open Graph 1200x630)</div>
+        <div style={styles.workspace}>
+          <div style={styles.leftPanel}>
+            <div style={styles.postPreview}>
+              <img src={URL.createObjectURL(new Blob([generateOGSvg()], { type: 'image/svg+xml' }))} alt="OG Preview" style={{ width: '100%', display: 'block', aspectRatio: '1200/630' }} />
+            </div>
+          </div>
+
+          <div style={styles.rightPanel}>
+            <div style={{ fontSize: 14, marginBottom: 15, lineHeight: '1.5' }}>
+              Genera una imagen optimizada para compartir en <strong>Facebook, LinkedIn, y Twitter (X)</strong>. 
+              Dimensiones: 1200x630 píxeles.
+            </div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 20, background: '#fff9e6', padding: 10, borderRadius: 6, border: '1px solid #ffeeba' }}>
+              ⚠️ Recomendado: Descarga esta imagen como <strong>social-preview.png</strong> y guárdala en la carpeta <code>public/</code>.
+            </div>
+            <button style={{ ...styles.btn, background: '#2ea44f' }} onClick={downloadOGPng}>Descargar social-preview.png</button>
           </div>
         </div>
       </section>
@@ -683,7 +837,54 @@ function App() {
               Genera un archivo <strong>.ico</strong> compatible con Windows y navegadores web.
               Incluye una versión de alta resolución (256px) usando el icono actual sin texto.
             </div>
-            <button style={{ ...styles.btn, background: '#4a4a4a' }} onClick={downloadIco}>Descargar Favicon .ICO</button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button style={{ ...styles.btn, background: '#4a4a4a', flex: 1 }} onClick={downloadIco}>Descargar .ICO</button>
+              <button style={{ ...styles.btn, background: '#666', flex: 1 }} onClick={() => downloadPngIcon(32, 'favicon.png', false)}>Descargar .PNG (32x32)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN 4: PWA ICONS */}
+      <section style={styles.section}>
+        <div style={styles.heading}><span>📱</span> Iconos PWA & iOS</div>
+        <div style={styles.workspace}>
+          <div style={styles.leftPanel}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '20px', padding: '20px', background: '#f9f9f9', borderRadius: '12px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 80, height: 80, margin: '0 auto', background: !transparent ? bgColor : '#fff', borderRadius: '16%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #eee' }}>
+                  <svg width="60" height="60" viewBox="0 0 80 80">
+                    <g dangerouslySetInnerHTML={{ __html: renderIconString('pwa-prev-ios', color) }} />
+                  </svg>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 8, color: '#666' }}>iOS Touch</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 80, height: 80, margin: '0 auto', background: !transparent ? bgColor : '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #eee' }}>
+                  <svg width="60" height="60" viewBox="0 0 80 80">
+                    <g dangerouslySetInnerHTML={{ __html: renderIconString('pwa-prev-android', color) }} />
+                  </svg>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 8, color: '#666' }}>Android</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.rightPanel}>
+            <div style={{ fontSize: 14, marginBottom: 15, lineHeight: '1.5' }}>
+              Descarga los iconos necesarios para un <strong>Manifest PWA</strong> y compatibilidad con <strong>iOS</strong>.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button style={{ ...styles.btn, background: '#000' }} onClick={() => downloadPngIcon(180, 'apple-touch-icon.png', true)}>
+                Descargar apple-touch-icon.png (180x180)
+              </button>
+              <button style={{ ...styles.btn, background: '#333' }} onClick={() => downloadPngIcon(192, 'android-chrome-192x192.png', false)}>
+                Descargar android-chrome-192x192.png
+              </button>
+              <button style={{ ...styles.btn, background: '#333' }} onClick={() => downloadPngIcon(512, 'android-chrome-512x512.png', false)}>
+                Descargar android-chrome-512x512.png
+              </button>
+            </div>
           </div>
         </div>
       </section>
